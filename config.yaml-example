@@ -1,0 +1,6 @@
+TELEGRAM:
+  TOKEN: TOKEN_BOT
+  USER_ID: USER_ID
+
+FONE:
+  URL_SCHEDULE: https://www.formula1.com/en/racing/2023.html
