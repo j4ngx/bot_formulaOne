@@ -1,14 +1,7 @@
-
-
 import logging
-
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler
-
 from funcionality import *
-
-
-
 import yaml
 from yaml.loader import SafeLoader
 
@@ -18,6 +11,7 @@ with open('config.yaml') as f:
 URL = CONFIG['FONE']['URL_SCHEDULE']
 
 TOKEN = CONFIG['TELEGRAM']['TOKEN']
+
 # Enable logging
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO

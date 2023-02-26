@@ -1,17 +1,9 @@
 import requests
-
 from bs4 import BeautifulSoup
-
 import json
-
 import datetime
 from datetime import date
-
-from telegram import Update
-from telegram.ext import  ContextTypes
-
 import logging
-
 try:
     from telegram import __version_info__
 except ImportError:
@@ -31,17 +23,19 @@ from telegram.ext import (
     ContextTypes,
     ConversationHandler,
 )
-
 import numpy as np
+import yaml
+from yaml.loader import SafeLoader
 
-URL = 'https://www.formula1.com/en/racing/2023.html'
+with open('config.yaml') as f:
+    CONFIG = yaml.load(f, Loader=SafeLoader)
+
+URL = CONFIG['FONE']['URL_SCHEDULE']
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
 logger = logging.getLogger(__name__)
-
-
 
 def get_schedule_fone(url):
     html = requests.get(url)
@@ -66,6 +60,16 @@ async def get_next_race(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             await update.message.reply_text('Race: {location} \nLocation: {city} \nDate: {date_race}' \
             .format(location = race['location']['name'], city = race['location']['address'], date_race = date_race.strftime('%d-%m-%Y')))
             break
+def build_url(url, gp):
+    country = gp['location']['address'].split(', ')[1]
+
+    if 'Las Vegas' in gp['location']['address']:
+        country = 'Las Vegas'
+    elif 'Abu Dhabi' in gp['location']['address']:
+        country = 'United_Arab_Emirates'
+
+    country = country.replace(" ", "_")
+    return url.format(country = country)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Send message on `/start`."""
@@ -85,8 +89,31 @@ async def get_info_gp(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
     index = int(update.callback_query.data)
 
     gp = RACES[index]
+    
+    with open('config.yaml') as f:
+        CONFIG = yaml.load(f, Loader=SafeLoader)
+    print(gp['location']['address'])
+
+    html = requests.get(build_url(CONFIG['FONE']['URL_COUNTRY'], gp))
+    soup = BeautifulSoup(html.text, "html.parser")
+    info_gp = soup.find_all(type='application/ld+json')
+
+    json_info_gp = json.loads(str(info_gp[0].text))
+
+    #print(json_info_gp)
+
     date_race = datetime.datetime.strptime(gp['startDate'], '%Y-%m-%dT%H:%M:%S')
-    print(update.callback_query)
+    events = []
+    for event in json_info_gp['subEvent']:
+        events.append(
+            {
+                'event_name': event['name'].split(' - ')[0],
+                'start_date': datetime.datetime.strptime(event['startDate'], '%Y-%m-%dT%H:%M:%SZ')
+            }
+        )
+
+
+    print(events)
     await context.bot.send_message(chat_id= context._chat_id, text = 'Race: {location} \nLocation: {city} \nDate: {date_race}' \
             .format(location = gp['location']['name'], city = gp['location']['address'], date_race = date_race.strftime('%d-%m-%Y')))
 
