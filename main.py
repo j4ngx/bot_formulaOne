@@ -27,7 +27,7 @@ def main():
     app.add_handler(CommandHandler("next_race",get_next_race))
     app.add_handler(CommandHandler("start",start))
     
-    app.add_handler(CallbackQueryHandler(get_info_gp))
+    app.add_handler(CallbackQueryHandler(manage_menu_gp))
     app.run_polling()
 
 

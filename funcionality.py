@@ -69,15 +69,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     # Send message with text and appended InlineKeyboard
     await update.message.reply_text("Choose the race do you want see information", reply_markup=reply_markup)
 
-async def get_info_gp(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Show new choice of buttons"""
-    index = int(update.callback_query.data)
-
-    gp = RACES[index]
-    
+def get_info_gp(gp):
     with open('config.yaml') as f:
         CONFIG = yaml.load(f, Loader=SafeLoader)
-    print(gp['location']['address'])
 
     html = requests.get(build_url(CONFIG['FONE']['URL_COUNTRY'], gp))
     soup = BeautifulSoup(html.text, "html.parser")
@@ -96,23 +90,41 @@ async def get_info_gp(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
         country = 'United_Arab_Emirates'
 
     image_url_circuit = soup.findAll(alt = country+'_Circuit.png')
+    if image_url_circuit:
+        image_url_circuit= image_url_circuit[0]['data-src']
+    else:
+        image_url_circuit = ''
     date_race = datetime.datetime.strptime(gp['startDate'], '%Y-%m-%dT%H:%M:%S')
-    
+
     text_sessions = ''
     for session in json_info_gp['subEvent']:
         date_session = datetime.datetime.strptime(session['startDate'], '%Y-%m-%dT%H:%M:%SZ')
         text_sessions += '  _*{session_name}*_ \n   _{date_session}_ \n'.format(session_name = session['name'].split(' - ')[0], date_session= date_session.strftime('%d-%m-%Y %H:%M'))
+
+    text_gp = '*{gp_name}, {country}* \n Date: _{date_gp}_\n\n Race weekend\n {gp_sessions}'.\
+        format(gp_name = gp['location']['name'].upper(), country = gp['location']['address'].split(', ')[1].upper(), date_gp = date_race, gp_sessions = text_sessions)
+
+    return text_gp, image_url_circuit
+
+async def manage_menu_gp(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Show new choice of buttons"""
+    index = int(update.callback_query.data)
+
+    gp = RACES[index]
     
-    text_gp = '*{gp_name}* \n Date: _{date_gp}_\n\n Race weekend\n {gp_sessions}'.format(gp_name = gp['location']['name'].upper(), date_gp = date_race, gp_sessions = text_sessions)
+    text_gp, url_image_circuit = get_info_gp(gp)
 
     await context.bot.send_message(chat_id = context._chat_id, text = text_gp.replace('-','\-'), parse_mode='MarkdownV2')
-    await context.bot.send_photo(chat_id = context._chat_id, photo = image_url_circuit[0]['data-src'])
+    await context.bot.send_photo(chat_id = context._chat_id, photo = url_image_circuit)
 
 async def get_full_shedule(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     for race in RACES:
-        date_race = datetime.datetime.strptime(race['startDate'], '%Y-%m-%dT%H:%M:%S')
-        await update.message.reply_text('Race: {location} \nLocation: {city} \nDate: {date_race}' \
-            .format(location = race['location']['name'], city = race['location']['address'], date_race = date_race.strftime('%d-%m-%Y')))
+        text_gp, url_image_circuit = get_info_gp(race)
+        await context.bot.send_message(chat_id = context._chat_id, text = text_gp.replace('-','\-'), parse_mode='MarkdownV2')
+        try:
+            await context.bot.send_photo(chat_id = context._chat_id, photo = url_image_circuit)
+        except:
+            print('Error: Image not found, {race_name}'.format(race_name = race['location']['name']))
 
 async def get_next_race(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     today = date.today()
@@ -120,6 +132,7 @@ async def get_next_race(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     for race in RACES:
         date_race = datetime.datetime.strptime(race['startDate'], '%Y-%m-%dT%H:%M:%S')
         if date_race.date() > today:
-            await update.message.reply_text('Race: {location} \nLocation: {city} \nDate: {date_race}' \
-            .format(location = race['location']['name'], city = race['location']['address'], date_race = date_race.strftime('%d-%m-%Y')))
+            text_gp, url_image_circuit = get_info_gp(race)
+            await context.bot.send_message(chat_id = context._chat_id, text = text_gp.replace('-','\-'), parse_mode='MarkdownV2')
+            await context.bot.send_photo(chat_id = context._chat_id, photo = url_image_circuit)
             break
