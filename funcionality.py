@@ -45,21 +45,6 @@ def get_schedule_fone(url):
 
 RACES = get_schedule_fone(URL)
 
-async def get_full_shedule(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    for race in RACES:
-        date_race = datetime.datetime.strptime(race['startDate'], '%Y-%m-%dT%H:%M:%S')
-        await update.message.reply_text('Race: {location} \nLocation: {city} \nDate: {date_race}' \
-            .format(location = race['location']['name'], city = race['location']['address'], date_race = date_race.strftime('%d-%m-%Y')))
-
-async def get_next_race(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    today = date.today()
-
-    for race in RACES:
-        date_race = datetime.datetime.strptime(race['startDate'], '%Y-%m-%dT%H:%M:%S')
-        if date_race.date() > today:
-            await update.message.reply_text('Race: {location} \nLocation: {city} \nDate: {date_race}' \
-            .format(location = race['location']['name'], city = race['location']['address'], date_race = date_race.strftime('%d-%m-%Y')))
-            break
 def build_url(url, gp):
     country = gp['location']['address'].split(', ')[1]
 
@@ -123,3 +108,18 @@ async def get_info_gp(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
     await context.bot.send_message(chat_id = context._chat_id, text = text_gp.replace('-','\-'), parse_mode='MarkdownV2')
     await context.bot.send_photo(chat_id = context._chat_id, photo = image_url_circuit[0]['data-src'])
 
+async def get_full_shedule(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    for race in RACES:
+        date_race = datetime.datetime.strptime(race['startDate'], '%Y-%m-%dT%H:%M:%S')
+        await update.message.reply_text('Race: {location} \nLocation: {city} \nDate: {date_race}' \
+            .format(location = race['location']['name'], city = race['location']['address'], date_race = date_race.strftime('%d-%m-%Y')))
+
+async def get_next_race(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    today = date.today()
+
+    for race in RACES:
+        date_race = datetime.datetime.strptime(race['startDate'], '%Y-%m-%dT%H:%M:%S')
+        if date_race.date() > today:
+            await update.message.reply_text('Race: {location} \nLocation: {city} \nDate: {date_race}' \
+            .format(location = race['location']['name'], city = race['location']['address'], date_race = date_race.strftime('%d-%m-%Y')))
+            break
