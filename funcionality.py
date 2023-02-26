@@ -101,7 +101,7 @@ def get_info_gp(gp):
         date_session = datetime.datetime.strptime(session['startDate'], '%Y-%m-%dT%H:%M:%SZ')
         text_sessions += '  _*{session_name}*_ \n   _{date_session}_ \n'.format(session_name = session['name'].split(' - ')[0], date_session= date_session.strftime('%d-%m-%Y %H:%M'))
 
-    text_gp = '*{gp_name}, {country}* \n Date: _{date_gp}_\n\n Race weekend\n {gp_sessions}'.\
+    text_gp = '*{gp_name}, {country}* \n Date: _{date_gp}_\n\n Race weekend\n {gp_sessions}\n'.\
         format(gp_name = gp['location']['name'].upper(), country = gp['location']['address'].split(', ')[1].upper(), date_gp = date_race, gp_sessions = text_sessions)
 
     return text_gp, image_url_circuit
